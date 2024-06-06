@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2019-08-30 09:25:01
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-06-06 15:15:08
+# @Last modified time: 2024-06-06 18:13:31
 
 """ Base object to download historical data from REST API.
 
@@ -156,8 +156,7 @@ class ImportDataCryptoCurrencies:
         return self.per + '_of_' + self.crypto + self.fiat + '_in_' + date
 
     def save(self, form='xlsx', by_period='Y'):
-        """ Save data by period (default is year) in the corresponding format
-        and file.
+        """ Save data by period with respect to format and file.
 
         TODO : to finish
 
@@ -165,20 +164,21 @@ class ImportDataCryptoCurrencies:
         ----------
         form : {'xlsx', 'csv'}
             Format to save data.
-        by_period : {'Y', 'M', 'D'}
-            - If 'Y' group data by year.
+        by_period : {'Y', 'M', 'D'}, optional
+            - If 'Y' group data by year, default.
             - If 'M' group data by month.
             - If 'D' group data by day.
 
         """
-        df = (self.last_df.append(self.df, sort=True)
-              .drop_duplicates(subset='TS', keep='last')
-              .reset_index(drop=True)
-              .drop('Date', axis=1)
-              .reindex(columns=[
-                  'TS', 'date', 'time', 'close', 'high', 'low', 'open',
-                  'quoteVolume', 'volume', 'weightedAverage'
-              ]))
+        # df = (self.last_df.append(self.df, sort=True)
+        df = (pd.concat([self.last_df, self.df])
+                .drop_duplicates(subset='TS', keep='last')
+                .reset_index(drop=True)
+                .drop('Date', axis=1)
+                .reindex(columns=[
+                    'TS', 'date', 'time', 'close', 'high', 'low', 'open',
+                    'quoteVolume', 'volume', 'weightedAverage'
+                ]))
         pathlib.Path(self.full_path).mkdir(parents=True, exist_ok=True)
         self.by_period = by_period
         grouped = (df.set_index('TS', drop=False)
@@ -231,7 +231,7 @@ class ImportDataCryptoCurrencies:
         """
         df = pd.DataFrame(
             data,
-            index=range((self.end - self.start) // self.span + 1),
+            # index=range((self.end - self.start) // self.span + 1),
             # index=range(self.start, self.end, self.span)
         ).rename(columns={'date': 'TS'})
         TS = pd.DataFrame(
@@ -279,10 +279,14 @@ class ImportDataCryptoCurrencies:
         return self.df
 
     def _period(self, span):
-        if type(span) is str:
+        if isinstance(span, str):
+
             return str_to_span(span), span
-        elif type(span) is int:
+
+        elif isinstance(span, int):
+
             return span, span_to_str(span)
+
         else:
             print(
                 "Error, span don't have the appropiate format",
