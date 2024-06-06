@@ -1,26 +1,9 @@
-#!/usr/bin/env python3
-# coding: utf-8
-# @Author: ArthurBernard
-# @Email: arthur.bernard.92@gmail.com
-# @Date: 2019-03-26 10:42:57
-# @Last modified by: ArthurBernard
-# @Last modified time: 2019-09-03 22:05:18
-
-""" Objects to download historical data from Poloniex exchange.
-
-.. currentmodule:: dccd.histo_dl.poloniex
-
-.. autoclass:: FromPoloniex
-   :members: import_data, save, get_data
-   :show-inheritance:
-
-"""
-
 # Import built-in packages
 
 # Import third-party packages
 import requests
 import json
+import pandas as pd
 
 # Import local packages
 from dccd.histo_dl.exchange import ImportDataCryptoCurrencies
@@ -85,7 +68,8 @@ class FromPoloniex(ImportDataCryptoCurrencies):
         if fiat in ['EUR', 'USD']:
             print("Poloniex don't allow fiat currencies.",
                   "The equivalent of US dollar is Tether USD as USDT.")
-            self.fiat = fiat = 'USDT'
+            #self.fiat = fiat = 'USDT'
+            self.fiat = fiat = 'USDD'
 
         if crypto == 'XBT':
             crypto = 'BTC'
@@ -94,7 +78,8 @@ class FromPoloniex(ImportDataCryptoCurrencies):
             self, path, crypto, span, 'Poloniex', fiat, form
         )
 
-        self.pair = self.fiat + '_' + crypto
+        #self.pair = self.fiat + '_' + crypto
+        self.pair = crypto + '_' + self.fiat
         self.full_path = self.path + '/Poloniex/Data/Clean_Data/'
         self.full_path += str(self.per) + '/'
         self.full_path += str(self.crypto) + str(self.fiat)
@@ -102,17 +87,22 @@ class FromPoloniex(ImportDataCryptoCurrencies):
     def _import_data(self, start='last', end='now'):
         self.start, self.end = self._set_time(start, end)
 
+        currencyPair = self.pair
+
         param = {
-            'command': 'returnChartData',
-            'currencyPair': self.pair,
-            'start': self.start,
-            'end': self.end,
-            'period': self.span
+            #'command': 'returnChartData',
+            #'currencyPair': self.pair,
+            'interval': 'MINUTE_1',
+            'limit' : 500,
+            'startTime': self.start*1000,
+            'endTime': self.end*1000,
+            #'period': self.span
         }
 
-        r = requests.get('https://poloniex.com/public', param)
+        r = requests.get(f"https://api.poloniex.com/markets/{currencyPair}/candles", param)
 
         return json.loads(r.text)
+        
 
     def import_data(self, start='last', end='now'):
         """ Download data from Poloniex for specific time interval.
@@ -135,3 +125,4 @@ class FromPoloniex(ImportDataCryptoCurrencies):
         data = self._import_data(start=start, end=end)
 
         return self._sort_data(data)
+        
