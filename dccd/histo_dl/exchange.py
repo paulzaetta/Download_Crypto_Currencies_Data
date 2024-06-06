@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2019-08-30 09:25:01
 # @Last modified by: ArthurBernard
-# @Last modified time: 2019-09-03 21:56:51
+# @Last modified time: 2024-06-06 15:15:08
 
 """ Base object to download historical data from REST API.
 
@@ -128,7 +128,7 @@ class ImportDataCryptoCurrencies:
             Timestamp of the last observation of you want.
 
         """
-        if start is 'last':
+        if start == 'last':
             start = self._get_last_date()
 
         elif isinstance(start, str):
@@ -137,7 +137,7 @@ class ImportDataCryptoCurrencies:
         else:
             pass
 
-        if end is 'now':
+        if end == 'now':
             end = time.time()
 
         elif isinstance(end, str):
@@ -184,9 +184,9 @@ class ImportDataCryptoCurrencies:
         grouped = (df.set_index('TS', drop=False)
                    .groupby(self._set_by_period, axis=0))  # .reset_index()
         for name, group in grouped:
-            if form is 'xlsx':
+            if form == 'xlsx':
                 self._excel_format(name, form, group)
-            elif form is 'csv':
+            elif form == 'csv':
                 group.to_csv(
                     self.full_path + '/' + self._name_file(name) + '.' + form
                 )
@@ -238,10 +238,9 @@ class ImportDataCryptoCurrencies:
             list(range(self.start, self.end, self.span)),
             columns=['TS']
         )
-        df = (df.merge(TS, on='TS', how='outer', sort=False)
-              .sort_values('TS')
-              .reset_index(drop=True)
-              .fillna(method='pad'))
+        # FIXME : too large data or invalid pair does not raise an exception
+        df = df.merge(TS, on='TS', how='outer', sort=False)
+        df = df.sort_values('TS').reset_index(drop=True).fillna(method='pad')
         df = df.assign(Date=pd.to_datetime(df.TS, unit='s'))
         self.df = df.assign(date=df.Date.dt.date, time=df.Date.dt.time)
         return self
