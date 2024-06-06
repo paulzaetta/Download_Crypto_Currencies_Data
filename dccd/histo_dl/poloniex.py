@@ -18,7 +18,6 @@
 # Import third-party packages
 import requests
 import json
-import pandas as pd
 
 # Import local packages
 from dccd.histo_dl.exchange import ImportDataCryptoCurrencies
@@ -101,8 +100,8 @@ class FromPoloniex(ImportDataCryptoCurrencies):
         if fiat in ['EUR', 'USD']:
             print("Poloniex don't allow fiat currencies.",
                   "The equivalent of US dollar is Tether USD as USDD.")
-            #self.fiat = fiat = 'USDT'
-            self.fiat = fiat = 'USDD'
+            self.fiat = fiat = 'USDT'
+            #self.fiat = fiat = 'USDD'
 
         if crypto == 'XBT':
             crypto = 'BTC'
@@ -119,7 +118,6 @@ class FromPoloniex(ImportDataCryptoCurrencies):
 
     def _import_data(self, start='last', end='now'):
         self.start, self.end = self._set_time(start, end)
-
         currencyPair = self.pair
 
         param = {
@@ -150,6 +148,38 @@ class FromPoloniex(ImportDataCryptoCurrencies):
         } for e in json_data]
 
         return data
+    
+
+
+    def _import_data_huge(self, start='last', end='now'):
+        self.start, self.end = self._set_time(start, end)
+
+        finalEnd = self.end
+        interval = 500*60
+        startDate = self.start
+        endDate = self.start + interval
+        data = list()
+
+        '''
+        try: 
+            while startDate < self.end * 1000 :
+                data.append(self._import_data(startDate, endDate))
+                i = interval
+                startDate = startDate + i
+                endDate = endDate + i
+            return data
+        except ValueError as e :
+            return data, startDate, endDate, e
+        '''
+
+        while startDate < finalEnd:
+            data.extend(self._import_data(startDate, endDate))
+            i = interval
+            startDate = startDate + i
+            endDate = endDate + i
+        return data, startDate, endDate
+        
+
 
     def import_data(self, start='last', end='now'):
         """ Download data from Poloniex for specific time interval.
