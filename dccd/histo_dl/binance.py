@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2019-02-13 18:26:20
 # @Last modified by: ArthurBernard
-# @Last modified time: 2019-09-03 22:04:22
+# @Last modified time: 2024-06-06 15:15:42
 
 """ Objects to download historical data from Binance exchange.
 
@@ -88,7 +88,7 @@ class FromBinance(ImportDataCryptoCurrencies):
                   "The equivalent of US dollar is Tether USD as USDT.")
             self.fiat = fiat = 'USDT'
 
-        if crypto is 'XBT':
+        if crypto == 'XBT':
             crypto = 'BTC'
 
         ImportDataCryptoCurrencies.__init__(

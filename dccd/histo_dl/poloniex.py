@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2019-03-26 10:42:57
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-06-06 12:18:23
+# @Last modified time: 2024-06-06 18:09:24
 
 """ Objects to download historical data from Poloniex exchange.
 .. currentmodule:: dccd.histo_dl.poloniex
@@ -44,7 +44,7 @@ SPAN_HANDLER = {
 
 
 class FromPoloniex(ImportDataCryptoCurrencies):
-    """ Class to import crypto-currencies data from the Poloniex exchange.
+    r""" Class to import crypto-currencies data from the Poloniex exchange.
 
     Parameters
     ----------
@@ -55,7 +55,7 @@ class FromPoloniex(ImportDataCryptoCurrencies):
     span : {int, 'weekly', 'daily', 'hourly'}
         - If str, periodicity of observation.
         - If int, number of the seconds between each observation, minimal span\
-            is 300 seconds.
+            is 60 seconds.
     fiat : str
         A fiat currency or a crypto-currency. Poloniex don't allow fiat
         currencies, but USD theter.
@@ -99,9 +99,8 @@ class FromPoloniex(ImportDataCryptoCurrencies):
         """ Initialize object. """
         if fiat in ['EUR', 'USD']:
             print("Poloniex don't allow fiat currencies.",
-                  "The equivalent of US dollar is Tether USD as USDD.")
+                  "The equivalent of US dollar is Tether USD as USDT.")
             self.fiat = fiat = 'USDT'
-            #self.fiat = fiat = 'USDD'
 
         if crypto == 'XBT':
             crypto = 'BTC'
@@ -110,7 +109,6 @@ class FromPoloniex(ImportDataCryptoCurrencies):
             self, path, crypto, span, 'Poloniex', fiat, form
         )
 
-        #self.pair = self.fiat + '_' + crypto
         self.pair = crypto + '_' + self.fiat
         self.full_path = self.path + '/Poloniex/Data/Clean_Data/'
         self.full_path += str(self.per) + '/'
@@ -121,14 +119,10 @@ class FromPoloniex(ImportDataCryptoCurrencies):
         currencyPair = self.pair
 
         param = {
-            #'command': 'returnChartData',
-            #'currencyPair': self.pair,
-            # 'interval': 'MINUTE_1',
             'interval': SPAN_HANDLER[self.span],
-            'limit' : 500,
+            'limit': 500,
             'startTime': self.start * 1000,
             'endTime': self.end * 1000,
-            #'period': self.span
         }
 
         url = f"https://api.poloniex.com/markets/{currencyPair}/candles"
@@ -148,38 +142,22 @@ class FromPoloniex(ImportDataCryptoCurrencies):
         } for e in json_data]
 
         return data
-    
-
 
     def _import_data_huge(self, start='last', end='now'):
         self.start, self.end = self._set_time(start, end)
 
         finalEnd = self.end
-        interval = 500*60
+        interval = 500 * self.span
         startDate = self.start
         endDate = self.start + interval
         data = list()
 
-        '''
-        try: 
-            while startDate < self.end * 1000 :
-                data.append(self._import_data(startDate, endDate))
-                i = interval
-                startDate = startDate + i
-                endDate = endDate + i
-            return data
-        except ValueError as e :
-            return data, startDate, endDate, e
-        '''
-
         while startDate < finalEnd:
             data.extend(self._import_data(startDate, endDate))
-            i = interval
-            startDate = startDate + i
-            endDate = endDate + i
-        return data, startDate, endDate
-        
+            startDate = startDate + interval
+            endDate = endDate + interval
 
+        return data, startDate, endDate
 
     def import_data(self, start='last', end='now'):
         """ Download data from Poloniex for specific time interval.
