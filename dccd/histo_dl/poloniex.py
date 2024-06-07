@@ -157,11 +157,10 @@ class FromPoloniex(ImportDataCryptoCurrencies):
             startDate = startDate + interval
             endDate = endDate + interval
 
-        return data, startDate, endDate
+        return data
 
-    def import_data(self, start='last', end='now'):
+    def import_data(self, start='last', end='now', huge=True):
         """ Download data from Poloniex for specific time interval.
-
         Parameters
         ----------
         start : int or str
@@ -170,13 +169,13 @@ class FromPoloniex(ImportDataCryptoCurrencies):
         end : int or str
             Timestamp of the last observation of you want as int or date
             format 'yyyy-mm-dd hh:mm:ss' as string.
-
         Returns
         -------
         data : pd.DataFrame
             Data sorted and cleaned in a data frame.
-
         """
-        data = self._import_data(start=start, end=end)
-
+        if huge:
+            data = self._import_data_huge(start=start, end=end)
+        else:
+            data = self._import_data(start=start, end=end)
         return self._sort_data(data)
