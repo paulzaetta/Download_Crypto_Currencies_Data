@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2019-08-30 09:25:01
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-06-06 18:13:31
+# @Last modified time: 2024-06-08 09:06:40
 
 """ Base object to download historical data from REST API.
 
@@ -31,7 +31,7 @@ __all__ = ['ImportDataCryptoCurrencies']
 
 
 class ImportDataCryptoCurrencies:
-    """ Base class to import data about crypto-currencies from some exchanges.
+    r""" Base class to import data about crypto-currencies from some exchanges.
 
     Parameters
     ----------
@@ -86,7 +86,7 @@ class ImportDataCryptoCurrencies:
         self.span, self.per = self._period(span)
         self.fiat = fiat
         self.pair = str(crypto + fiat)
-        self.full_path = self.path + '/' + platform + '/Data/Clean_Data/'
+        self.full_path = f"{self.path}/{platform}/Data/Clean_Data/"
         self.full_path += str(self.per) + '/' + self.pair
         self.last_df = pd.DataFrame()
         self.form = form
@@ -146,14 +146,17 @@ class ImportDataCryptoCurrencies:
         else:
             pass
 
-        return int((start // self.span) * self.span), \
-            int((end // self.span) * self.span)
+        start = int((start // self.span) * self.span)
+        end = int((end // self.span) * self.span)
+
+        return start, end
 
     def _set_by_period(self, TS):
         return TS_to_date(TS, form='%' + self.by_period)
 
     def _name_file(self, date):
-        return self.per + '_of_' + self.crypto + self.fiat + '_in_' + date
+        # return self.per + '_of_' + self.crypto + self.fiat + '_in_' + date
+        return f"{self.per}_of_{self.crypto + self.fiat}_in_{date}"
 
     def save(self, form='xlsx', by_period='Y'):
         """ Save data by period with respect to format and file.
@@ -170,7 +173,6 @@ class ImportDataCryptoCurrencies:
             - If 'D' group data by day.
 
         """
-        # df = (self.last_df.append(self.df, sort=True)
         df = (pd.concat([self.last_df, self.df])
                 .drop_duplicates(subset='TS', keep='last')
                 .reset_index(drop=True)
@@ -179,19 +181,24 @@ class ImportDataCryptoCurrencies:
                     'TS', 'date', 'time', 'close', 'high', 'low', 'open',
                     'quoteVolume', 'volume', 'weightedAverage'
                 ]))
+
         pathlib.Path(self.full_path).mkdir(parents=True, exist_ok=True)
         self.by_period = by_period
         grouped = (df.set_index('TS', drop=False)
-                   .groupby(self._set_by_period, axis=0))  # .reset_index()
+                   .groupby(self._set_by_period, axis=0))
+
         for name, group in grouped:
             if form == 'xlsx':
                 self._excel_format(name, form, group)
+
             elif form == 'csv':
                 group.to_csv(
                     self.full_path + '/' + self._name_file(name) + '.' + form
                 )
+
             else:
                 print('Not allowing fomat')
+
         return self
 
     def _excel_format(self, name, form, group):
@@ -231,8 +238,6 @@ class ImportDataCryptoCurrencies:
         """
         df = pd.DataFrame(
             data,
-            # index=range((self.end - self.start) // self.span + 1),
-            # index=range(self.start, self.end, self.span)
         ).rename(columns={'date': 'TS'})
         TS = pd.DataFrame(
             list(range(self.start, self.end, self.span)),
@@ -243,6 +248,7 @@ class ImportDataCryptoCurrencies:
         df = df.sort_values('TS').reset_index(drop=True).fillna(method='pad')
         df = df.assign(Date=pd.to_datetime(df.TS, unit='s'))
         self.df = df.assign(date=df.Date.dt.date, time=df.Date.dt.time)
+
         return self
 
     def import_data(self, start='last', end='now'):
