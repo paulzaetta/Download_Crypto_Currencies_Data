@@ -4,7 +4,7 @@
 # @Email: arthur.bernard.92@gmail.com
 # @Date: 2019-03-26 10:42:57
 # @Last modified by: ArthurBernard
-# @Last modified time: 2024-06-06 18:09:24
+# @Last modified time: 2024-06-08 09:07:10
 
 """ Objects to download historical data from Poloniex exchange.
 .. currentmodule:: dccd.histo_dl.poloniex
@@ -147,20 +147,20 @@ class FromPoloniex(ImportDataCryptoCurrencies):
         self.start, self.end = self._set_time(start, end)
 
         finalEnd = self.end
-        interval = 500 * self.span
         startDate = self.start
-        endDate = self.start + interval
+        endDate = self.start + 500 * self.span
         data = list()
 
         while startDate < finalEnd:
             data.extend(self._import_data(startDate, endDate))
-            startDate = startDate + interval
-            endDate = endDate + interval
+            startDate = startDate + 500 * self.span
+            endDate = endDate + 500 * self.span
 
         return data
 
     def import_data(self, start='last', end='now', huge=True):
         """ Download data from Poloniex for specific time interval.
+
         Parameters
         ----------
         start : int or str
@@ -169,13 +169,20 @@ class FromPoloniex(ImportDataCryptoCurrencies):
         end : int or str
             Timestamp of the last observation of you want as int or date
             format 'yyyy-mm-dd hh:mm:ss' as string.
+        huge : bool, optional
+            For large volumes of data, import in batches of 500, default is
+            True.
+
         Returns
         -------
         data : pd.DataFrame
             Data sorted and cleaned in a data frame.
+
         """
         if huge:
             data = self._import_data_huge(start=start, end=end)
+
         else:
             data = self._import_data(start=start, end=end)
+
         return self._sort_data(data)
